@@ -3,7 +3,12 @@
    <table class="m-auto w-3/4 my-8 text-5xl">
      <tr>
        <td>Input</td>
-       <td><input class="border" type="text" /></td>
+       <td>
+         <div v-if="isAnimating" class="block w-full">
+           <span class="inline-block leading-1.15rem" v-for="char, index in inputText" :key="index">{{char}}</span>
+         </div>
+         <input v-else class="border block w-full" type="text" v-model="inputText" />
+        </td>
      </tr>
      <tr>
        <td>Stack</td>
@@ -24,13 +29,17 @@ export default defineComponent({
   },
   setup() {
     const isAnimating = ref(false)
+    const inputText = ref("")
+    const stack = ref<string[]>([])
     const toggleAnimation = () => {
       isAnimating.value = !isAnimating.value
     }
     
     return {
       isAnimating,
-      toggleAnimation
+      toggleAnimation,
+      inputText,
+      stack
     }
   }
 })
