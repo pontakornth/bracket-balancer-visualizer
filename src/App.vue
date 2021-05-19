@@ -4,10 +4,7 @@
      <tr>
        <td>Input</td>
        <td>
-         <div v-if="isAnimating" class="block w-full">
-           <span class="inline-block leading-1.15rem" v-for="char, index in inputText" :key="index">{{char}}</span>
-         </div>
-         <input v-else class="border block w-full" type="text" v-model="inputText" />
+         <input :disabled="isAnimating" class="border block w-full" type="text" v-model="inputText" />
         </td>
      </tr>
      <tr>
@@ -19,8 +16,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, reactive } from 'vue'
 import HelloWorld from './components/HelloWorld.vue'
+
+type AnimationQueue = {
+  stackQueue: string[][],
+  imbalancePosition?: number
+}
 
 export default defineComponent({
   name: 'App',
@@ -30,9 +32,19 @@ export default defineComponent({
   setup() {
     const isAnimating = ref(false)
     const inputText = ref("")
-    const stack = ref<string[]>([])
+    const stack = reactive<string[]>([])
+    const animationQueue = reactive<AnimationQueue>({stackQueue: []})
+    const timeoutQueue = reactive<number[]>([])
     const toggleAnimation = () => {
       isAnimating.value = !isAnimating.value
+    }
+    const pauseAnimation = () => {
+      timeoutQueue.forEach(timeout => clearTimeout(timeout))
+    }
+    const reset = () => {
+      inputText.value = ""
+      isAnimating.value = false
+      stack.splice(0, stack.length)
     }
     
     return {
