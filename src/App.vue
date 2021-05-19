@@ -9,10 +9,11 @@
      </tr>
      <tr>
        <td>Stack</td>
-       <td class="text-gray-300">Please animate</td>
+       <td v-if="!isAnimating" class="text-gray-300">Please animate</td>
+       <td v-else>{{animationQueue.stackQueue[0].join(" ")}}</td>
      </tr>
    </table>
-   <button @click="toggleAnimation" class="button">Animate</button>
+   <button @click="animate" class="button">Animate</button>
 </template>
 
 <script lang="ts">
@@ -74,12 +75,28 @@ export default defineComponent({
         animationQueue.imbalancePosition = -1
       }
     }
+
+    const animate = () => {
+      isAnimating.value = true
+      checkBalance()
+      animationQueue.stackQueue.forEach((stack, index) => {
+        const timeout = setTimeout(() => {
+          animationQueue.stackQueue.splice(0, 1)
+        }, (index + 1) * 200)
+        timeoutQueue.push(timeout)
+      })
+      timeoutQueue.push(setTimeout(() => {
+        isAnimating.value = false
+      }, animationQueue.stackQueue.length * 200))
+    }
     
     return {
       isAnimating,
       toggleAnimation,
       inputText,
-      displayStack
+      displayStack,
+      animate,
+      animationQueue
     }
   }
 })
