@@ -147,7 +147,7 @@ td:first-child {
 }
 
 .button-group {
-  @apply flex;
+  @apply flex justify-center;
   * {
     @apply mr-4;
   }
