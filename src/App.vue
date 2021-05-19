@@ -10,10 +10,13 @@
      <tr>
        <td>Stack</td>
        <td v-if="!isAnimating" class="text-gray-300">Please animate</td>
-       <td v-else>{{animationQueue.stackQueue[0].join(" ")}}</td>
+       <td v-else>{{displayStack.value.join(" ")}}</td>
      </tr>
    </table>
-   <button @click="animate" class="button">Animate</button>
+   <div class="button-group mx-auto">
+    <button @click="startAnimation" class="button">Animate</button>
+    <button @click="reset" class="button bg-red-500 hover:bg-red-400" v-if="isAnimating">Reset</button>
+   </div>
 </template>
 
 <script lang="ts">
@@ -33,8 +36,8 @@ export default defineComponent({
   setup() {
     const isAnimating = ref(false)
     const inputText = ref("")
-    const displayStack = reactive<string[]>([])
-    const animationQueue = reactive<AnimationQueue>({stackQueue: []})
+    const displayStack = reactive<{value: string[]}>({value: []})
+    const animationQueue: AnimationQueue = {stackQueue: [], imbalancePosition: -1}
     const timeoutQueue = reactive<number[]>([])
     const toggleAnimation = () => {
       isAnimating.value = !isAnimating.value
@@ -45,8 +48,9 @@ export default defineComponent({
     const reset = () => {
       inputText.value = ""
       isAnimating.value = false
-      displayStack.splice(0, displayStack.length)
+      displayStack.value = []
       pauseAnimation()
+      animationQueue.stackQueue = []
     }
 
     const checkBalance = () => {
@@ -60,7 +64,7 @@ export default defineComponent({
           stack.push(char)
           animationQueue.stackQueue.push([...stack])
         } else if (closing.includes(char)) {
-          if (matching.includes(opening[opening.length - 1] + char)) {
+          if (matching.includes(stack[stack.length - 1] + char)) {
             stack.pop()
             animationQueue.stackQueue.push([...stack])
           } else {
@@ -74,13 +78,14 @@ export default defineComponent({
       } else {
         animationQueue.imbalancePosition = -1
       }
+      console.log(animationQueue.stackQueue.values())
     }
 
+
     const animate = () => {
-      isAnimating.value = true
-      checkBalance()
       animationQueue.stackQueue.forEach((stack, index) => {
         const timeout = setTimeout(() => {
+          displayStack.value = animationQueue.stackQueue[0]
           animationQueue.stackQueue.splice(0, 1)
         }, (index + 1) * 200)
         timeoutQueue.push(timeout)
@@ -89,6 +94,12 @@ export default defineComponent({
         isAnimating.value = false
       }, animationQueue.stackQueue.length * 200))
     }
+
+    const startAnimation = () => {
+      isAnimating.value = true
+      checkBalance() // This function enqueue the animatino process.
+      animate()
+    }
     
     return {
       isAnimating,
@@ -96,7 +107,9 @@ export default defineComponent({
       inputText,
       displayStack,
       animate,
-      animationQueue
+      animationQueue,
+      startAnimation,
+      reset
     }
   }
 })
@@ -123,5 +136,13 @@ td:first-child {
 .button {
   @apply text-4xl font-bold bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-lg;
 }
+
+.button-group {
+  @apply flex;
+  * {
+    @apply mr-4;
+  }
+}
+
 
 </style>
