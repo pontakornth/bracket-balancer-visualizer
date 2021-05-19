@@ -14,13 +14,13 @@
      </tr>
    </table>
    <div class="button-group mx-auto">
-    <button @click="startAnimation" class="button">Animate</button>
+    <button @click="onClickAnimateButton" class="button">{{animateButtonText}}</button>
     <button @click="reset" class="button bg-red-500 hover:bg-red-400" v-if="isAnimating">Reset</button>
    </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref, reactive, computed } from 'vue'
 import HelloWorld from './components/HelloWorld.vue'
 
 type AnimationQueue = {
@@ -39,11 +39,18 @@ export default defineComponent({
     const displayStack = reactive<{value: string[]}>({value: []})
     const animationQueue: AnimationQueue = {stackQueue: [], imbalancePosition: -1}
     const timeoutQueue = reactive<number[]>([])
+    const animateButtonText = computed(() => {
+      return isAnimating.value ? 'Pause' : 'Animate'
+    })
+    const onClickAnimateButton = computed(() => {
+      return isAnimating.value ? pauseAnimation : startAnimation
+    })
     const toggleAnimation = () => {
       isAnimating.value = !isAnimating.value
     }
     const pauseAnimation = () => {
       timeoutQueue.forEach(timeout => clearTimeout(timeout))
+      isAnimating.value = false
     }
     const reset = () => {
       inputText.value = ""
@@ -109,6 +116,8 @@ export default defineComponent({
       animate,
       animationQueue,
       startAnimation,
+      animateButtonText,
+      onClickAnimateButton,
       reset
     }
   }
