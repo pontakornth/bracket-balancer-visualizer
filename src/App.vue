@@ -32,7 +32,7 @@ export default defineComponent({
   setup() {
     const isAnimating = ref(false)
     const inputText = ref("")
-    const stack = reactive<string[]>([])
+    const displayStack = reactive<string[]>([])
     const animationQueue = reactive<AnimationQueue>({stackQueue: []})
     const timeoutQueue = reactive<number[]>([])
     const toggleAnimation = () => {
@@ -44,14 +44,42 @@ export default defineComponent({
     const reset = () => {
       inputText.value = ""
       isAnimating.value = false
-      stack.splice(0, stack.length)
+      displayStack.splice(0, displayStack.length)
+      pauseAnimation()
+    }
+
+    const checkBalance = () => {
+      const opening = ["(", "{", "["]
+      const closing = [")", "}", "]"]
+      const matching = ["()", "{}", "[]"]
+      const stack: string[] = []
+      for (let index in [...inputText.value]) {
+        const char = inputText.value[index]
+        if (opening.includes(char)) {
+          stack.push(char)
+          animationQueue.stackQueue.push([...stack])
+        } else if (closing.includes(char)) {
+          if (matching.includes(opening[opening.length - 1] + char)) {
+            stack.pop()
+            animationQueue.stackQueue.push([...stack])
+          } else {
+            // Bracket does not match
+            animationQueue.imbalancePosition = parseInt(index) + 1
+          }
+        }
+      }
+      if (stack.length > 0) {
+        animationQueue.imbalancePosition = inputText.value.length
+      } else {
+        animationQueue.imbalancePosition = -1
+      }
     }
     
     return {
       isAnimating,
       toggleAnimation,
       inputText,
-      stack
+      displayStack
     }
   }
 })
