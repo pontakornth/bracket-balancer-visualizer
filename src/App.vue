@@ -15,8 +15,9 @@
    </table>
    <div class="button-group mx-auto">
     <button @click="onClickAnimateButton" class="button">{{animateButtonText}}</button>
-    <button @click="reset" class="button bg-red-500 hover:bg-red-400" v-if="isAnimating">Reset</button>
+    <button @click="reset" class="button bg-red-500 hover:bg-red-400" v-if="isAnimating || !isAnimationDone">Reset</button>
    </div>
+   <p v-if="isAnimating && animationQueue.imbalancePosition != -1">The imbalance is at character {{animationQueue.imbalancePosition}}.</p>
 </template>
 
 <script lang="ts">
@@ -35,27 +36,39 @@ export default defineComponent({
   },
   setup() {
     const isAnimating = ref(false)
+    const isAnimationDone = ref(true)
     const inputText = ref("")
     const displayStack = reactive<{value: string[]}>({value: []})
-    const animationQueue: AnimationQueue = {stackQueue: [], imbalancePosition: -1}
+    const animationQueue = reactive<AnimationQueue>({stackQueue: [], imbalancePosition: -1})
     const timeoutQueue = reactive<number[]>([])
     const animateButtonText = computed(() => {
       return isAnimating.value ? 'Pause' : 'Animate'
     })
     const onClickAnimateButton = computed(() => {
-      return isAnimating.value ? pauseAnimation : startAnimation
+      if (isAnimating.value) {
+        console.log("Pause animation")
+        return pauseAnimation
+      } else if (isAnimationDone.value) {
+        console.log("Start Animation")
+        return startAnimation
+      } else {
+        console.log("Resume Animation")
+        return animate
+      }
     })
     const toggleAnimation = () => {
       isAnimating.value = !isAnimating.value
     }
     const pauseAnimation = () => {
       timeoutQueue.forEach(timeout => clearTimeout(timeout))
+      timeoutQueue.splice(0, timeoutQueue.length)
       isAnimating.value = false
     }
     const reset = () => {
       inputText.value = ""
       isAnimating.value = false
       displayStack.value = []
+      isAnimationDone.value = true
       pauseAnimation()
       animationQueue.stackQueue = []
     }
@@ -77,6 +90,7 @@ export default defineComponent({
           } else {
             // Bracket does not match
             animationQueue.imbalancePosition = parseInt(index) + 1
+            return
           }
         }
       }
@@ -85,25 +99,29 @@ export default defineComponent({
       } else {
         animationQueue.imbalancePosition = -1
       }
-      console.log(animationQueue.stackQueue.values())
     }
 
 
     const animate = () => {
       animationQueue.stackQueue.forEach((stack, index) => {
+        console.log("Set timeout ")
         const timeout = setTimeout(() => {
-          displayStack.value = animationQueue.stackQueue[0]
+          displayStack.value = [...stack]
           animationQueue.stackQueue.splice(0, 1)
         }, (index + 1) * 200)
         timeoutQueue.push(timeout)
       })
       timeoutQueue.push(setTimeout(() => {
         isAnimating.value = false
+        isAnimationDone.value = true
       }, animationQueue.stackQueue.length * 200))
     }
 
     const startAnimation = () => {
       isAnimating.value = true
+      isAnimationDone.value = false
+      animationQueue.stackQueue = []
+      displayStack.value = []
       checkBalance() // This function enqueue the animatino process.
       animate()
     }
@@ -115,9 +133,11 @@ export default defineComponent({
       displayStack,
       animate,
       animationQueue,
+      timeoutQueue,
       startAnimation,
       animateButtonText,
       onClickAnimateButton,
+      isAnimationDone,
       reset
     }
   }
